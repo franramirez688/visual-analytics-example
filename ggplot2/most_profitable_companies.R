@@ -1,4 +1,4 @@
-#Tufte Charts 
+# Tufte Charts 
 
 # Connect to the libaries
 library(ggthemes)
@@ -8,45 +8,31 @@ library(psych)
 library(reshape2)
 
 #0. Connect external data 
-irish_whiskey_data <- read.csv("https://gist.githubusercontent.com/franramirez688/4e88f438da89fff27677f1b19b937636/raw/810284a689b5da1c5919b9e1010557639654f467/the%2520Most%2520Profitable%2520Companies%2520Make%2520Per%2520Second")
-head(irish_whiskey_data)
-summary(irish_whiskey_data)
+profit_companies <- read.csv("https://gist.githubusercontent.com/franramirez688/4e88f438da89fff27677f1b19b937636/raw/810284a689b5da1c5919b9e1010557639654f467/the%2520Most%2520Profitable%2520Companies%2520Make%2520Per%2520Second")
+head(profit_companies)
+summary(profit_companies)
+
+# Normalizing column names and data
+profit_companies["X2016.Net.Income"] = profit_companies["X2016.Net.Income"] / 10e+9
+colnames(profit_companies) <- c("comp", "ind", "netinc", "rank", "profit")
+
 
 #1. Apply the tufte theme
-ggplot(irish_whiskey_data, aes(x=Year, y=Cases, color = Country)) + 
-  scale_colour_brewer(palette = "Accent") +
-  geom_point(size=2)
+ggplot(profit_companies, aes(x=rank, y=profit)) + 
+  geom_point(size=10, color="#990000") + geom_rangeframe(size=0.1) 
 
-ggplot(irish_whiskey_data, aes(x=Year, y=Cases, color = Country)) + 
-  theme_tufte(ticks = FALSE, base_size = 8) +
-  geom_point(size=2)
-
-#2. Tufte Boxplot
-ggplot(irish_whiskey_data, aes(x=Year, y=Cases, color = Quality)) + 
-  theme_tufte(base_size = 7, ticks=F)
-
-ggplot(irish_whiskey_data, aes(x=Year, y=Cases, color = Quality)) + 
-  geom_point(size=0.02, alpha=0.5) +
-  theme_bw() + 
-  theme(panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank(), 
-        panel.border = element_blank(),
-        axis.title = element_blank(), 
-        axis.text = element_blank(),
-        axis.ticks = element_blank()) +
-  theme_tufte(base_size = 5)
-
-
-ggplot(diamonds, aes(x=carat, y=price), size = 0.1) + 
+ggplot(profit_companies, aes(x=rank, y=profit), size = 0.1) + 
   theme_tufte(ticks = FALSE, base_size = 8) + 
-  geom_point(size=0.02, alpha=0.09, color="#990000") + geom_rangeframe(size=0.1) 
+  geom_point(size=10, color="#990000") + geom_rangeframe(size=0.1) 
 
-#2. Tufte Boxplot
-ggplot(quakes, aes(factor(mag),stations)) + 
-  theme_tufte(base_size = 7, ticks=F) +
-  geom_tufteboxplot(outlier.colour="transparent", color= "#990000") + 
+ggplot(profit_companies, aes(x=netinc, y=profit, color = ind)) +
+  theme_tufte(base_size=10, ticks=F) +
+  geom_bar(width=2, fill="gray", stat = "identity") +
   theme(axis.title=element_blank()) +
-  annotate("text", x = 50, y = 120, adj=1,  family="serif", label = c(""))
+  #scale_y_continuous(breaks=seq(100, 1500, 250)) + 
+  #geom_hline(yintercept=seq(100, 1500, 250), col="white", lwd=1)  +
+  scale_colour_brewer(palette = "Accent") +
+  facet_wrap(ind ~ comp)
 
 #With the diamond dataset
 ggplot(diamonds, aes(factor(cut),price)) + 
@@ -107,8 +93,8 @@ p <- ggplot(faithful, aes(waiting, eruptions)) +
 ggMarginal(p, type = "histogram", fill="transparent")
 
 #With the diamond dataset
-pp <- ggplot(diamonds, aes(carat, price)) + 
-  geom_point(size=0.02, alpha=0.09, color="blue") + 
+pp <- ggplot(profit_companies, aes(netinc, profit)) + 
+  geom_point(size=5, alpha=0.5, color="blue") + 
   theme_tufte(base_size = 5, ticks=F) + 
   theme(axis.title=element_blank(), axis.text=element_blank())
 ggMarginal(pp, type = "histogram", size=20, fill="blue")
