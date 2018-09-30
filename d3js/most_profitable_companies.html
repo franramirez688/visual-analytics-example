@@ -4,6 +4,11 @@
     .axis .domain {
       display: none;
     }
+
+    svg {
+        background-color: #f0f0f0;
+    }
+
 </style>
 <svg width="1050" height="500"></svg>
 <script src="https://d3js.org/d3.v4.min.js"></script>
@@ -25,8 +30,20 @@
         .rangeRound([height, 0]);
 
     var z = d3.scaleOrdinal()
-        .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+        // From color http://colorbrewer2.org
+        .range([
+            '#fbb4ae',
+            '#b3cde3',
+            '#ccebc5',
+            '#decbe4',
+            '#fed9a6',
+            '#ffffcc',
+            '#e5d8bd'
+        ]);
 
+    /*
+    * Draw the stacked bar chart from the given dataset
+    */
     var drawStackedBar = function (error, data) {
         if (error) throw error;
         // New column names (simpler)
@@ -47,6 +64,7 @@
         y.domain([0, d3.max(data, function(d) { return d.profit; })]).nice();
         z.domain(keys);
 
+        // Create the Bar chart
         g.selectAll("rect")
           .data(data)
           .enter().append("rect")
@@ -54,7 +72,15 @@
             .attr("y", function(d) { return y(d.profit); })
             .attr("height", function(d) { return height - y(d.profit); })
             .attr("width", x.bandwidth())
-            .attr("fill", function(d) { return z(d.ind); });
+            .attr("fill", function(d) { return z(d.ind); })
+        .on("mouseover", function() { tooltip.style("display", null); })
+        .on("mouseout", function() { tooltip.style("display", "none"); })
+        .on("mousemove", function(d) {
+          var xPosition = d3.mouse(this)[0] - 5;
+          var yPosition = d3.mouse(this)[1] - 5;
+          tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+          tooltip.select("text").text('Comp.: ' + d.comp + '- Rank: ' + d.rank)
+      });
 
         // X_axis position and label
         g.append("g")
@@ -104,8 +130,23 @@
             .attr("y", 9.5)
             .attr("dy", "0.32em")
             .text(function(d) { return d;});
+
+        // Prep the tooltip bits, initial display is hidden
+        var tooltip = svg.append("g")
+          .attr("class", "tooltip")
+          .style("display", "none");
+
+        tooltip.append("text")
+          .attr("x", 30)
+          .attr("dy", "1.2em")
+          .style("text-anchor", "middle")
+          .attr("font-size", "12px")
+          .attr("font-weight", "bold");
     };
 
+    /*
+    * Rename columns and transform variable types in their correct data type
+    */
     var prepareDataset = function(d, i, columns) {
         // 0: "Company" str
         // 1: "Industry" str
