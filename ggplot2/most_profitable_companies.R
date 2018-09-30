@@ -25,13 +25,14 @@ ggplot(profit_companies, aes(x=rank, y=profit), size = 0.1) +
   theme_tufte(ticks = FALSE, base_size = 8) + 
   geom_point(size=10, color="#990000") + geom_rangeframe(size=0.1) 
 
-ggplot(profit_companies, aes(x=netinc, y=profit, color = ind)) +
+ggplot(profit_companies, aes(x=netinc, y=profit, color=ind)) +
   theme_tufte(base_size=10, ticks=F) +
-  geom_bar(width=2, fill="gray", stat = "identity") +
-  theme(axis.title=element_blank()) +
+  geom_bar(width=2, fill="white", stat = "identity") +
+  labs(x = "2016 Net Income (billions)",  y = "Profit/second") +
+  #theme(axis.title=element_blank()) +
   #scale_y_continuous(breaks=seq(100, 1500, 250)) + 
   #geom_hline(yintercept=seq(100, 1500, 250), col="white", lwd=1)  +
-  scale_colour_brewer(palette = "Accent") +
+  scale_colour_tableau() +
   facet_wrap(ind ~ comp)
 
 #With the diamond dataset
