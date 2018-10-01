@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+    .axis .domain {
+      display: none;
+    }
+
+    svg {
+        background-color: #f0f0f0;
+    }
+
+</style>
+<svg width="1050" height="500"></svg>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://underscorejs.org/underscore-min.js"></script>
+<script>
+
+    var svg = d3.select("svg"),
+        margin = {top: 20, right: 150, bottom: 30, left: 40},
+        width = +svg.attr("width") - margin.left - margin.right,
+        height = +svg.attr("height") - margin.top - margin.bottom,
+        g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var x = d3.scaleBand()
+        .rangeRound([0, width])
+        .paddingInner(0.05)
+        .align(0.1);
+
+    var y = d3.scaleLinear()
+        .rangeRound([height, 0]);
+
+    var z = d3.scaleOrdinal()
+        // From color http://colorbrewer2.org
+        .range([
+            '#fbb4ae',
+            '#b3cde3',
+            '#ccebc5',
+            '#decbe4',
+            '#fed9a6',
+            '#ffffcc',
+            '#e5d8bd'
+        ]);
+
+    /*
+    * Draw the stacked bar chart from the given dataset
+    */
+    var drawStackedBar = function (error, data) {
+        if (error) throw error;
+        // New column names (simpler)
+            // 0: comp
+            // 1: ind
+            // 2: net_inc
+            // 3: rank
+            // 4: profit
+
+        // Sort by Industry groups
+        var groupedData = _.groupBy(data, 'ind');
+
+        data.sort(function(a, b) { return b.profit - a.profit; });;
+        var keys = _.keys(groupedData);
+        x.domain(data.map(function(d) { return d.net_inc; }));
+        y.domain([0, d3.max(data, function(d) { return d.profit; })]).nice();
+        z.domain(keys);
+
+        // Create the Bar chart
+        g.selectAll("rect")
+          .data(data)
+          .enter().append("rect")
+            .attr("x", function(d) { return x(d.net_inc); })
+            .attr("y", function(d) { return y(d.profit); })
+            .attr("height", function(d) { return height - y(d.profit); })
+            .attr("width", x.bandwidth())
+            .attr("fill", function(d) { return z(d.ind); })
+        .on("mouseover", function() { tooltip.style("display", null); })
+        .on("mouseout", function() { tooltip.style("display", "none"); })
+        .on("mousemove", function(d) {
+          var xPosition = d3.mouse(this)[0] - 5;
+          var yPosition = d3.mouse(this)[1] - 5;
+          tooltip.attr("transform", "translate(" + xPosition + "," + yPosition + ")");
+          tooltip.select("text").text('Comp.: ' + d.comp + '- Rank: ' + d.rank)
+      });
+
+        // X_axis position and label
+        g.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x))
+            .append("text")
+              .attr("x", (x.bandwidth() + 1) * data.length)
+              .attr("y", 2)
+              .attr("dy", "0.32em")
+              .attr("fill", "#000")
+              .attr("font-weight", "bold")
+              .attr("text-anchor", "start")
+              .text("2016 Net Income (billions)");
+
+        // Y_axis position and label
+        g.append("g")
+            .attr("class", "axis")
+            .call(d3.axisLeft(y).ticks(null, "s"))
+          .append("text")
+            .attr("x", 2)
+            .attr("y", y(y.ticks().pop()) + 0.5)
+            .attr("dy", "0.32em")
+            .attr("fill", "#000")
+            .attr("font-weight", "bold")
+            .attr("text-anchor", "start")
+            .text("Profit/second ($)");
+
+        // Graphic legend
+        var legend = g.append("g")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", 10)
+            .attr("text-anchor", "end")
+          .selectAll("g")
+          .data(keys.slice().reverse())
+          .enter().append("g")
+            .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+        legend.append("rect")
+            .attr("x", width - 19)
+            .attr("width", 19)
+            .attr("height", 19)
+            .attr("fill", z);
+
+        legend.append("text")
+            .attr("x", width - 24)
+            .attr("y", 9.5)
+            .attr("dy", "0.32em")
+            .text(function(d) { return d;});
+
+        // Prep the tooltip bits, initial display is hidden
+        var tooltip = svg.append("g")
+          .attr("class", "tooltip")
+          .style("display", "none");
+
+        tooltip.append("text")
+          .attr("x", 30)
+          .attr("dy", "1.2em")
+          .style("text-anchor", "middle")
+          .attr("font-size", "12px")
+          .attr("font-weight", "bold");
+    };
+
+    /*
+    * Rename columns and transform variable types in their correct data type
+    */
+    var prepareDataset = function(d, i, columns) {
+        // 0: "Company" str
+        // 1: "Industry" str
+        // 2: "2016 Net Income" str -> int
+        // 3: "Fortune 500 Rank Company" str -> int
+        // 4: "Profit/Second" str > float
+        var newData = {};
+        newData["comp"] = d[columns[0]];
+        newData["ind"] = d[columns[1]];
+        newData["net_inc"] = +d[columns[2]] / 10**9;
+        newData["rank"] = +d[columns[3]];
+        newData["profit"] = +d[columns[4]];
+        return newData;
+    };
+
+    d3.csv("https://gist.githubusercontent.com/franramirez688/4e88f438da89fff27677f1b19b937636/raw/810284a689b5da1c5919b9e1010557639654f467/the%2520Most%2520Profitable%2520Companies%2520Make%2520Per%2520Second",
+        prepareDataset,
+        drawStackedBar
+    );
+</script>
